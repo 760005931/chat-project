@@ -21,6 +21,12 @@ const io = socketIo(server, {
 const users = new Map(); // userId -> { id, username, socketId }
 const messageHistory = []; // 存储所有消息
 const MAX_HISTORY = 100; // 最多保存100条历史消息
+const privateMessages = new Map(); // 存储私聊消息历史 conversationId -> [messages]
+
+// 生成会话ID（确保两个用户之间的会话ID唯一）
+const getConversationId = (userId1, userId2) => {
+  return [userId1, userId2].sort().join('_');
+};
 
 // Socket.IO 连接处理
 io.on('connection', (socket) => {
@@ -83,6 +89,66 @@ io.on('connection', (socket) => {
     
     console.log(`${user.username}: ${content}`);
   });
+
+  // 发送私聊消息
+  socket.on('message:private', ({ targetUserId, content }) => {
+    const sender = users.get(socket.id);
+    const receiver = users.get(targetUserId);
+    
+    if (!sender) {
+      socket.emit('error', '请先登录');
+      return;
+    }
+    
+    if (!receiver) {
+      socket.emit('error', '目标用户不在线');
+      return;
+    }
+
+    const privateMessage = {
+      id: Date.now(),
+      type: 'private',
+      fromUserId: sender.id,
+      fromUsername: sender.username,
+      toUserId: receiver.id,
+      toUsername: receiver.username,
+      content: content,
+      timestamp: new Date()
+    };
+
+    // 保存到私聊历史记录
+    const conversationId = getConversationId(sender.id, receiver.id);
+    if (!privateMessages.has(conversationId)) {
+      privateMessages.set(conversationId, []);
+    }
+    const conversation = privateMessages.get(conversationId);
+    conversation.push(privateMessage);
+    if (conversation.length > MAX_HISTORY) {
+      conversation.shift();
+    }
+
+    // 发送给发送者和接收者
+    socket.emit('message:private', privateMessage);
+    socket.to(receiver.socketId).emit('message:private', privateMessage);
+    
+    console.log(`私聊 ${sender.username} -> ${receiver.username}: ${content}`);
+  });
+
+  // 获取私聊历史记录
+  socket.on('message:private:history', ({ targetUserId }) => {
+    const user = users.get(socket.id);
+    if (!user) {
+      socket.emit('error', '请先登录');
+      return;
+    }
+
+    const conversationId = getConversationId(socket.id, targetUserId);
+    const history = privateMessages.get(conversationId) || [];
+    socket.emit('message:private:history', { targetUserId, messages: history });
+    
+    console.log(`用户 ${user.username} 请求与 ${targetUserId} 的私聊历史`);
+  });
+
 
   // 用户断开连接
   socket.on('disconnect', () => {
