@@ -4,7 +4,13 @@
 
 ---
 
-## 🚀 快速回忆 - 25 个常用数组方法分类
+## 🚀 快速回忆 - 数组遍历与方法分类
+
+### 0️⃣ 基础循环 (3 个)
+
+-   `for` - 传统循环，可控制索引
+-   `for...of` - 遍历值（推荐）⭐
+-   `for...in` - 遍历键（不推荐用于数组）
 
 ### 1️⃣ 遍历方法 (6 个)
 
@@ -49,6 +55,185 @@
 ---
 
 ## 遍历方法
+
+### 0. 传统遍历方式对比
+
+在介绍数组方法之前，先了解三种基础的循环方式：
+
+#### for 循环 - 最基础的遍历
+
+**语法**：`for (let i = 0; i < array.length; i++)`
+
+**特点**：
+
+-   **可以中断**（`break`）和跳过（`continue`）
+-   **性能最好**（直接索引访问）
+-   可以控制步长和方向
+
+**示例**：
+
+```javascript
+const arr = [1, 2, 3, 4, 5];
+
+// 基础用法
+for (let i = 0; i < arr.length; i++) {
+    console.log(arr[i]);
+}
+
+// 可以中断
+for (let i = 0; i < arr.length; i++) {
+    if (arr[i] === 3) break; // 遇到 3 就停止
+    console.log(arr[i]);
+}
+// 输出: 1, 2
+
+// 倒序遍历
+for (let i = arr.length - 1; i >= 0; i--) {
+    console.log(arr[i]);
+}
+// 输出: 5, 4, 3, 2, 1
+
+// 步长为 2
+for (let i = 0; i < arr.length; i += 2) {
+    console.log(arr[i]);
+}
+// 输出: 1, 3, 5
+```
+
+**使用场景**：
+
+-   需要精确控制索引
+-   需要中断循环
+-   性能敏感的场景
+
+---
+
+#### for...of 循环 - 遍历值（推荐）⭐
+
+**语法**：`for (const item of array)`
+
+**特点**：
+
+-   **遍历的是值**（不是索引）
+-   **可以中断**（`break`）和跳过（`continue`）
+-   **语法简洁**，最符合直觉
+-   ES6 新增，现代 JavaScript 推荐用法
+
+**示例**：
+
+```javascript
+const arr = [1, 2, 3, 4, 5];
+
+// 基础用法
+for (const item of arr) {
+    console.log(item);
+}
+// 输出: 1, 2, 3, 4, 5
+
+// 可以中断
+for (const item of arr) {
+    if (item === 3) break;
+    console.log(item);
+}
+// 输出: 1, 2
+
+// 可以跳过
+for (const item of arr) {
+    if (item % 2 === 0) continue; // 跳过偶数
+    console.log(item);
+}
+// 输出: 1, 3, 5
+
+// 配合 entries() 获取索引
+for (const [index, item] of arr.entries()) {
+    console.log(`索引 ${index}: ${item}`);
+}
+// 输出:
+// 索引 0: 1
+// 索引 1: 2
+// ...
+```
+
+**使用场景**：
+
+-   只需要遍历值，不需要索引
+-   需要中断或跳过的场景
+-   代码可读性优先
+
+---
+
+#### for...in 循环 - 遍历键（不推荐用于数组）⚠️
+
+**语法**：`for (const key in object)`
+
+**特点**：
+
+-   **遍历的是键（索引）**，不是值
+-   会遍历**原型链上的属性**（坑！）
+-   **主要用于对象**，不推荐用于数组
+
+**示例**：
+
+```javascript
+const arr = [1, 2, 3];
+
+// ⚠️ 不推荐：遍历数组
+for (const index in arr) {
+    console.log(index, arr[index]);
+}
+// 输出:
+// 0 1
+// 1 2
+// 2 3
+
+// ✅ 推荐：遍历对象
+const obj = { name: 'Alice', age: 25 };
+for (const key in obj) {
+    console.log(key, obj[key]);
+}
+// 输出:
+// name Alice
+// age 25
+```
+
+**为什么不推荐用于数组？**
+
+```javascript
+const arr = [1, 2, 3];
+arr.customProp = 'test'; // 给数组添加自定义属性
+
+for (const key in arr) {
+    console.log(key);
+}
+// 输出: 0, 1, 2, customProp ❌ 会遍历到自定义属性！
+
+// 正确做法：用 for...of
+for (const item of arr) {
+    console.log(item);
+}
+// 输出: 1, 2, 3 ✅ 只遍历数组元素
+```
+
+---
+
+#### 三种 for 循环对比
+
+| 特性               | for          | for...of   | for...in     |
+| ------------------ | ------------ | ---------- | ------------ |
+| **遍历内容**       | 索引         | 值         | 键（索引）   |
+| **可中断**         | ✅           | ✅         | ✅           |
+| **性能**           | 最快         | 快         | 较慢         |
+| **适用场景**       | 需要索引控制 | 遍历数组值 | 遍历对象属性 |
+| **推荐度（数组）** | ⭐⭐⭐       | ⭐⭐⭐⭐⭐ | ❌ 不推荐    |
+
+**选择建议**：
+
+-   **遍历数组**：优先用 `for...of`
+-   **需要索引**：用传统 `for` 循环
+-   **遍历对象**：用 `for...in`
+-   **不需要中断**：用 `forEach`、`map`、`filter` 等数组方法
+
+---
 
 ### 1. forEach - 遍历数组
 
